@@ -132,7 +132,7 @@ tr:hover { background:#f8f9fa; }
 
 <div class="hdr">
   <h1>주식 종목 추천 대시보드 <span class="badge">삼성증권 스타일</span></h1>
-  <div class="sub">KRX + 네이버금융 데이터 기반 | 2026-08-19 (모바일·PWA·편집 UI 갱신) | KOSPI 907종목 + KOSDAQ 1841종목 분석</div>
+  <div class="sub">KRX + 네이버금융 데이터 기반 | 2026-08-19 (수익률 시뮬레이션 추가) | KOSPI 907종목 + KOSDAQ 1841종목 분석</div>
 </div>
 <div class="stat-bar">
   <div>분석 종목 <span class="v">2,748개</span></div>
@@ -210,15 +210,30 @@ tr:hover { background:#f8f9fa; }
     <!-- 종목 카드 그리드 -->
     <div id="watch-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:16px;margin-bottom:20px"></div>
 
+    <!-- 포트폴리오 수익률 시뮬레이션 -->
+    <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#e3f2fd,#bbdefb);border-left:4px solid #1a237e">
+      <div class="card-t" style="color:#1a237e">💼 포트폴리오 수익률 시뮬레이션</div>
+      <div id="portfolio-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;text-align:center"></div>
+      <div style="font-size:11px;color:var(--txt2);margin-top:12px;text-align:center;line-height:1.7">
+        💡 아래 테이블에서 <strong>매입가</strong>·<strong>보유수량</strong>을 입력하면 자동으로 <strong>수익률</strong>과 <strong>평가손익</strong>이 계산됩니다. 입력값은 브라우저에 자동 저장됩니다.
+      </div>
+    </div>
+
     <!-- 종합 테이블 -->
     <div class="card">
-      <div class="card-t">📋 관리 종목 종합 테이블</div>
+      <div class="card-t">📋 관리 종목 종합 테이블 <span style="font-size:11px;color:var(--txt2);font-weight:400">(매입가·수량 입력 → 실시간 수익률 계산)</span></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;justify-content:center">
+        <button onclick="clearPortfolio()" style="padding:6px 14px;border:1px solid #ffcdd2;background:#fff;color:#c62828;border-radius:6px;cursor:pointer;font-size:11px">🗑️ 매입 입력 초기화</button>
+        <button onclick="fillCurrentPrice()" style="padding:6px 14px;border:1px solid var(--bdr);background:#fff;border-radius:6px;cursor:pointer;font-size:11px">📥 매입가에 현재가 채우기</button>
+      </div>
       <div style="overflow-x:auto">
       <table>
         <thead><tr>
-          <th>#</th><th>종목명</th><th>업종</th><th>현재가</th><th>등락률</th>
-          <th>52주위치</th><th>RSI</th><th>시그널</th>
-          <th>매수목표</th><th>매도목표</th><th>PER</th><th>PBR</th><th>추천</th>
+          <th>#</th><th>종목명</th><th>현재가</th><th>등락률</th>
+          <th style="background:#fff9c4">매입가</th><th style="background:#fff9c4">수량</th>
+          <th style="background:#e8f5e9">투자금</th><th style="background:#e8f5e9">평가금</th>
+          <th style="background:#fce4ec">수익률</th><th style="background:#fce4ec">평가손익</th>
+          <th>RSI</th><th>매수목표</th><th>매도목표</th><th>추천</th>
         </tr></thead>
         <tbody id="tb-watch"></tbody>
       </table>
@@ -1396,9 +1411,120 @@ function resetWatchlist(){
   }
 }
 
+// ===== 포트폴리오 수익률 시뮬레이션 =====
+const PORTFOLIO_KEY='stockPortfolio';
+function getPortfolio(){
+  try { return JSON.parse(localStorage.getItem(PORTFOLIO_KEY)||'{}'); } catch(e){ return {}; }
+}
+function savePortfolio(p){ try { localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(p)); } catch(e){} }
+function updatePortfolio(code,field,value){
+  const p=getPortfolio();
+  if(!p[code]) p[code]={buyPrice:0,quantity:0};
+  p[code][field]=Math.max(0,parseFloat(value)||0);
+  savePortfolio(p);
+  renderPortfolioSummary();
+  updatePortfolioRow(code);
+}
+function clearPortfolio(){
+  if(confirm('입력된 모든 매입가·수량을 초기화하시겠습니까?')){
+    localStorage.removeItem(PORTFOLIO_KEY);
+    renderWatch();
+  }
+}
+function fillCurrentPrice(){
+  if(!confirm('모든 관리 종목의 매입가를 현재가로 채우시겠습니까? (수량 미입력 시 1주로 설정)')) return;
+  const p=getPortfolio();
+  W.forEach(w=>{
+    if(!p[w.code]) p[w.code]={buyPrice:0,quantity:0};
+    p[w.code].buyPrice=w.current;
+    if(!p[w.code].quantity) p[w.code].quantity=1;
+  });
+  savePortfolio(p);
+  renderWatch();
+}
+
+function calcPortfolioRow(w){
+  const p=getPortfolio()[w.code]||{buyPrice:0,quantity:0};
+  const buyPrice=p.buyPrice||0;
+  const qty=p.quantity||0;
+  const invested=buyPrice*qty;
+  const valueNow=w.current*qty;
+  const pnl=valueNow-invested;
+  const ret=buyPrice>0?((w.current-buyPrice)/buyPrice*100):null;
+  return {buyPrice,qty,invested,valueNow,pnl,ret};
+}
+
+function renderPortfolioSummary(){
+  const el=document.getElementById('portfolio-summary'); if(!el) return;
+  let totalInvested=0, totalValue=0, activeCount=0, bestRet=null, bestName='', worstRet=null, worstName='';
+  W.forEach(w=>{
+    const c=calcPortfolioRow(w);
+    if(c.invested>0){
+      totalInvested+=c.invested; totalValue+=c.valueNow; activeCount++;
+      if(bestRet===null||c.ret>bestRet){ bestRet=c.ret; bestName=w.name; }
+      if(worstRet===null||c.ret<worstRet){ worstRet=c.ret; worstName=w.name; }
+    }
+  });
+  const totalPnL=totalValue-totalInvested;
+  const totalRet=totalInvested>0?(totalPnL/totalInvested*100):0;
+  const retColor=totalRet>=0?'#d32f2f':'#1a73e8';
+  const pnlColor=totalPnL>=0?'#d32f2f':'#1a73e8';
+
+  el.innerHTML=`
+    <div style="padding:14px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+      <div style="font-size:11px;color:var(--txt2)">💰 총 투자금</div>
+      <div style="font-size:22px;font-weight:800;margin-top:4px">${fmt(totalInvested)}</div>
+      <div style="font-size:10px;color:var(--txt2);margin-top:2px">${activeCount}종목 매수</div>
+    </div>
+    <div style="padding:14px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+      <div style="font-size:11px;color:var(--txt2)">📊 현재 평가금</div>
+      <div style="font-size:22px;font-weight:800;margin-top:4px;color:${pnlColor}">${fmt(totalValue)}</div>
+      <div style="font-size:10px;color:var(--txt2);margin-top:2px">원</div>
+    </div>
+    <div style="padding:14px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);border:2px solid ${pnlColor}33">
+      <div style="font-size:11px;color:var(--txt2)">💹 평가손익</div>
+      <div style="font-size:22px;font-weight:800;margin-top:4px;color:${pnlColor}">${totalPnL>=0?'+':''}${fmt(totalPnL)}</div>
+      <div style="font-size:10px;color:${pnlColor};margin-top:2px;font-weight:700">원</div>
+    </div>
+    <div style="padding:14px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);border:2px solid ${retColor}33">
+      <div style="font-size:11px;color:var(--txt2)">📈 총 수익률</div>
+      <div style="font-size:22px;font-weight:800;margin-top:4px;color:${retColor}">${totalRet>=0?'+':''}${totalRet.toFixed(2)}%</div>
+      <div style="font-size:10px;color:var(--txt2);margin-top:2px">${activeCount}종목 기준</div>
+    </div>
+    ${activeCount>0?`
+    <div style="padding:14px;background:#fff5f5;border-radius:8px;border:1px solid #ffcdd2">
+      <div style="font-size:11px;color:#c62828">🏆 최고 수익</div>
+      <div style="font-size:14px;font-weight:800;margin-top:4px">${bestName}</div>
+      <div style="font-size:16px;font-weight:800;color:#d32f2f;margin-top:2px">${bestRet>=0?'+':''}${bestRet.toFixed(2)}%</div>
+    </div>
+    <div style="padding:14px;background:#f0f7ff;border-radius:8px;border:1px solid #bbdefb">
+      <div style="font-size:11px;color:#0d47a1">⚠️ 최저 수익</div>
+      <div style="font-size:14px;font-weight:800;margin-top:4px">${worstName}</div>
+      <div style="font-size:16px;font-weight:800;color:#1a73e8;margin-top:2px">${worstRet>=0?'+':''}${worstRet.toFixed(2)}%</div>
+    </div>`:''}
+  `;
+}
+
+function updatePortfolioRow(code){
+  const w=W.find(x=>x.code===code); if(!w) return;
+  const c=calcPortfolioRow(w);
+  const investedEl=document.getElementById('inv-'+code); if(investedEl) investedEl.textContent=fmt(c.invested);
+  const valueEl=document.getElementById('val-'+code); if(valueEl) valueEl.textContent=fmt(c.valueNow);
+  const retEl=document.getElementById('ret-'+code);
+  if(retEl){
+    if(c.ret===null){ retEl.textContent='-'; retEl.style.color=''; }
+    else { retEl.textContent=(c.ret>=0?'+':'')+c.ret.toFixed(2)+'%'; retEl.style.color=c.ret>=0?'#d32f2f':'#1a73e8'; retEl.style.fontWeight='700'; }
+  }
+  const pnlEl=document.getElementById('pnl-'+code);
+  if(pnlEl){
+    if(c.qty===0){ pnlEl.textContent='-'; pnlEl.style.color=''; }
+    else { pnlEl.textContent=(c.pnl>=0?'+':'')+fmt(c.pnl); pnlEl.style.color=c.pnl>=0?'#d32f2f':'#1a73e8'; pnlEl.style.fontWeight='700'; }
+  }
+}
+
 function renderWatch(){
   W=buildWatchList();
-  if(!W.length){ document.getElementById('watch-cards').innerHTML='<div class="card" style="text-align:center;color:var(--txt2);padding:40px">관리 종목이 없습니다. 상단의 ✏️ 종목 편집 버튼으로 추가하세요.</div>'; document.getElementById('watch-count').textContent='(0개)'; document.getElementById('watch-avg').textContent='-'; document.getElementById('watch-summary').textContent='-'; document.getElementById('watch-names').textContent='-'; return; }
+  if(!W.length){ document.getElementById('watch-cards').innerHTML='<div class="card" style="text-align:center;color:var(--txt2);padding:40px">관리 종목이 없습니다. 상단의 ✏️ 종목 편집 버튼으로 추가하세요.</div>'; document.getElementById('watch-count').textContent='(0개)'; document.getElementById('watch-avg').textContent='-'; document.getElementById('watch-summary').textContent='-'; document.getElementById('watch-names').textContent='-'; document.getElementById('portfolio-summary').innerHTML=''; return; }
 
   // 헤더 요약
   document.getElementById('watch-count').textContent='('+W.length+'개)';
@@ -1502,25 +1628,32 @@ function renderWatch(){
     });
   });
 
-  // 테이블
+  // 테이블 (매입가·수량 입력 + 실시간 수익률 시뮬레이션)
+  const pf=getPortfolio();
   document.getElementById('tb-watch').innerHTML=W.map((w,i)=>{
     const chgColor=w.change_pct>=0?'#d32f2f':'#1a73e8';
+    const p=pf[w.code]||{buyPrice:0,quantity:0};
+    const c=calcPortfolioRow(w);
+    const retColor=c.ret===null?'':(c.ret>=0?'#d32f2f':'#1a73e8');
+    const pnlColor=c.pnl>=0?'#d32f2f':'#1a73e8';
     return `<tr>
       <td class="n">${i+1}</td>
-      <td><strong>${w.name}</strong> <span style="color:var(--txt2);font-size:10px">${w.code}</span></td>
-      <td style="font-size:11px">${w.sector||'-'}</td>
+      <td style="text-align:left"><strong>${w.name}</strong> <span style="color:var(--txt2);font-size:10px">${w.code}</span></td>
       <td class="r n">${fmt(w.current)}</td>
       <td class="r n" style="color:${chgColor};font-weight:700">${w.change_pct>=0?'+':''}${(w.change_pct||0).toFixed(2)}%</td>
-      <td class="r n">${w.pos_52w}%</td>
+      <td style="background:#fffde7"><input type="number" value="${p.buyPrice||''}" placeholder="0" onchange="updatePortfolio('${w.code}','buyPrice',this.value)" style="width:80px;padding:4px 6px;border:1px solid #fbc02d;border-radius:4px;text-align:right;font-size:11px;font-weight:700;background:#fff"></td>
+      <td style="background:#fffde7"><input type="number" value="${p.quantity||''}" placeholder="0" onchange="updatePortfolio('${w.code}','quantity',this.value)" style="width:55px;padding:4px 6px;border:1px solid #fbc02d;border-radius:4px;text-align:right;font-size:11px;font-weight:700;background:#fff"></td>
+      <td class="r n" style="background:#f1f8e9" id="inv-${w.code}">${c.invested?fmt(c.invested):'-'}</td>
+      <td class="r n" style="background:#f1f8e9" id="val-${w.code}">${c.qty?fmt(c.valueNow):'-'}</td>
+      <td class="r n" style="background:#fce4ec;color:${retColor};font-weight:700" id="ret-${w.code}">${c.ret===null?'-':(c.ret>=0?'+':'')+c.ret.toFixed(2)+'%'}</td>
+      <td class="r n" style="background:#fce4ec;color:${pnlColor};font-weight:700" id="pnl-${w.code}">${c.qty===0?'-':(c.pnl>=0?'+':'')+fmt(c.pnl)}</td>
       <td class="r n" style="color:${w.rsi<30?'#d32f2f':w.rsi>70?'#1a73e8':'#333'}">${w.rsi||'-'}</td>
-      <td style="font-size:11px">${w.signal_label}</td>
       <td class="r n" style="color:#d32f2f">${fmt(w.buy_target)}</td>
       <td class="r n" style="color:#1a73e8">${fmt(w.sell_target)}</td>
-      <td class="r n">${w.per?w.per.toFixed(1):'-'}</td>
-      <td class="r n">${w.pbr?w.pbr.toFixed(2):'-'}</td>
-      <td><span style="background:${w.rec_color};color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">${w.recommendation}</span></td>
+      <td><span style="background:${w.rec_color};color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap">${w.recommendation}</span></td>
     </tr>`;
   }).join('');
+  renderPortfolioSummary();
 }
 setTimeout(()=>{ renderWatch(); },60);
 
