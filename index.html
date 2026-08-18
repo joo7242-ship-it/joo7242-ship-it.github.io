@@ -11,6 +11,16 @@
 <meta property="og:url" content="https://joo7242-ship-it.github.io/">
 <meta property="og:image" content="https://via.placeholder.com/1200x630/1a237e/ffffff?text=Stock+Dashboard">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a237e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="주식대시보드">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root { --pri:#1a237e; --pri2:#3949ab; --bg:#f4f6f8; --card:#fff; --txt:#212121; --txt2:#757575; --bdr:#e0e0e0; }
@@ -31,13 +41,52 @@ body { font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; background:
 .tab { padding:12px 14px; border:none; background:transparent; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; color:var(--txt2); text-align:left; transition:.2s; border-left:3px solid transparent; width:100%; }
 .tab:hover { background:#f0f4f8; color:var(--pri); }
 .tab.on { color:var(--pri); background:linear-gradient(90deg,#e8eaf6,#f5f7fa); border-left-color:var(--pri); font-weight:700; }
-@media(max-width:900px) {
-  .wrap { flex-direction:column; }
-  .tabs { position:sticky; top:120px; width:100%; max-height:none; flex-direction:row; overflow-x:auto; padding:8px; }
-  .tab { min-width:130px; border-left:none; border-bottom:3px solid transparent; text-align:center; padding:10px 12px; font-size:12px; }
+@media(max-width:1024px) {
+  .wrap { flex-direction:column; padding:10px; gap:8px; }
+  .tabs { position:sticky; top:110px; width:100%; max-height:none; flex-direction:row; overflow-x:auto; overflow-y:hidden; padding:8px; -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory; }
+  .tab { min-width:130px; border-left:none; border-bottom:3px solid transparent; text-align:center; padding:10px 12px; font-size:12px; scroll-snap-align:start; white-space:nowrap; }
   .tab.on { border-left:none; border-bottom-color:var(--pri); background:#e8eaf6; }
 }
-@media(max-width:768px) { .hdr { padding:10px 14px; } .hdr h1 { font-size:15px; } .stat-bar { top:54px; padding:8px 14px; font-size:11px; } }
+@media(max-width:768px) {
+  .hdr { padding:10px 14px; } .hdr h1 { font-size:15px; gap:6px; }
+  .badge { font-size:10px; padding:2px 6px; }
+  .hdr .sub { font-size:10px; }
+  .stat-bar { top:58px; padding:8px 12px; font-size:11px; gap:10px; }
+  .tabs { top:98px; padding:6px; gap:2px; }
+  .tab { min-width:100px; padding:8px 10px; font-size:11px; }
+  .card { padding:14px; margin-bottom:12px; border-radius:10px; }
+  .card-t { font-size:13px; margin-bottom:10px; }
+  .charts { grid-template-columns:1fr !important; gap:12px; }
+  .cbox { padding:12px; }
+  .cbox h3 { font-size:12px; }
+  table { font-size:10px; }
+  th, td { padding:5px 4px !important; }
+  th { font-size:10px; }
+  .g { width:22px; height:22px; font-size:10px; }
+  .disc { font-size:10px; padding:12px; }
+  #watch-cards { grid-template-columns:1fr !important; }
+  .fb { padding:6px 12px; font-size:11px; }
+  .sb { width:100%; font-size:12px; padding:8px 14px; }
+  .flt { gap:6px; }
+}
+@media(max-width:480px) {
+  .wrap { padding:6px; }
+  .hdr h1 { font-size:13px; } .hdr { padding:8px 12px; }
+  .stat-bar { font-size:10px; padding:6px 10px; }
+  .card { padding:12px; }
+  table { font-size:9px; }
+}
+/* 터치 UI */
+@media(hover:none) and (pointer:coarse) {
+  .tab { min-height:44px; }
+  button, .fb { min-height:36px; }
+  th { cursor:default; }
+}
+/* PWA 설치 배너 */
+#install-banner { display:none; position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:1000; background:linear-gradient(135deg,#1a237e,#3949ab); color:white; padding:14px 20px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,.25); align-items:center; gap:14px; max-width:calc(100% - 32px); font-size:13px; }
+#install-banner.show { display:flex; }
+#install-banner button { background:white; color:#1a237e; border:none; padding:8px 16px; border-radius:8px; font-weight:700; cursor:pointer; font-size:13px; }
+#install-banner .close { background:transparent; color:white; padding:4px 8px; font-size:16px; }
 .pane { display:none; } .pane.on { display:block; }
 .card { background:var(--card); border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,.08); padding:20px; margin-bottom:20px; }
 .card-t { font-size:15px; font-weight:700; margin-bottom:14px; text-align:center; }
@@ -70,15 +119,26 @@ tr:hover { background:#f8f9fa; }
 </style>
 </head>
 <body>
+<!-- PWA 설치 배너 -->
+<div id="install-banner">
+  <span style="font-size:22px">📱</span>
+  <div style="flex:1">
+    <div style="font-weight:700;margin-bottom:2px">앱으로 설치하기</div>
+    <div style="font-size:11px;opacity:.9">홈 화면에 추가하여 앱처럼 사용하세요</div>
+  </div>
+  <button onclick="installPWA()">설치</button>
+  <button class="close" onclick="dismissInstall()">✕</button>
+</div>
+
 <div class="hdr">
   <h1>주식 종목 추천 대시보드 <span class="badge">삼성증권 스타일</span></h1>
-  <div class="sub">KRX + 네이버금융 데이터 기반 | 2026-08-18 18:07 | KOSPI 907종목 + KOSDAQ 1841종목 분석</div>
+  <div class="sub">KRX + 네이버금융 데이터 기반 | 2026-08-19 (모바일·PWA·편집 UI 갱신) | KOSPI 907종목 + KOSDAQ 1841종목 분석</div>
 </div>
 <div class="stat-bar">
   <div>분석 종목 <span class="v">2,748개</span></div>
-  <div>평균 PER <span class="v">17.72</span></div>
-  <div>평균 PBR <span class="v">1.59</span></div>
-  <div>평균 배당률 <span class="v">3.36%</span></div>
+  <div>평균 PER <span class="v">21.41</span></div>
+  <div>평균 PBR <span class="v">1.92</span></div>
+  <div>평균 배당률 <span class="v">2.91%</span></div>
 </div>
 <div class="wrap">
   <div class="tabs">
@@ -105,12 +165,43 @@ tr:hover { background:#f8f9fa; }
           <div>
             <div style="font-size:12px;opacity:.85">⭐ 주 관리 종목</div>
             <div style="font-size:22px;font-weight:800;margin-top:4px">사용자 워치리스트 <span id="watch-count" style="font-size:14px;opacity:.8"></span></div>
-            <div style="font-size:12px;opacity:.9;margin-top:4px">한화 · 삼성전자 · 삼성SDI · 삼성증권 · LG씨엔에스 · LG전자</div>
+            <div id="watch-names" style="font-size:12px;opacity:.9;margin-top:4px;max-width:600px">-</div>
           </div>
-          <div style="text-align:right">
-            <div style="font-size:11px;opacity:.85">평균 등락률</div>
-            <div id="watch-avg" style="font-size:28px;font-weight:800;line-height:1">-</div>
-            <div id="watch-summary" style="font-size:12px;opacity:.9;margin-top:4px">-</div>
+          <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+            <button onclick="openWatchEdit()" style="background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.4);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">✏️ 종목 편집</button>
+            <div>
+              <div style="font-size:11px;opacity:.85">평균 등락률</div>
+              <div id="watch-avg" style="font-size:28px;font-weight:800;line-height:1">-</div>
+              <div id="watch-summary" style="font-size:12px;opacity:.9;margin-top:4px">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 편집 모달 -->
+    <div id="watch-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;padding:16px">
+      <div style="background:white;border-radius:12px;max-width:640px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:20px 24px;background:linear-gradient(135deg,#7b1fa2,#c2185b);color:white;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:11px;opacity:.85">⭐ 주 관리 종목 편집</div>
+            <div style="font-size:18px;font-weight:800;margin-top:2px">워치리스트 관리</div>
+          </div>
+          <button onclick="closeWatchEdit()" style="background:rgba(255,255,255,.2);color:white;border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px">✕</button>
+        </div>
+        <div style="padding:20px 24px;overflow-y:auto;flex:1">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--txt2)">📋 현재 관리 종목</div>
+          <div id="watch-edit-list" style="margin-bottom:20px"></div>
+
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--txt2)">🔍 종목 추가 (전체 2,780종목에서 검색)</div>
+          <input type="text" id="watch-search" placeholder="종목명 또는 종목코드 입력..." style="width:100%;padding:12px 16px;border:2px solid var(--bdr);border-radius:8px;font-size:14px;outline:none;box-sizing:border-box" oninput="searchWatchStock()">
+          <div id="watch-search-results" style="margin-top:10px;max-height:280px;overflow-y:auto"></div>
+        </div>
+        <div style="padding:14px 24px;background:#f8f9fa;border-top:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="font-size:11px;color:var(--txt2)">💾 편집 내용은 브라우저에 자동 저장됩니다</div>
+          <div style="display:flex;gap:8px">
+            <button onclick="resetWatchlist()" style="padding:10px 16px;border:1px solid var(--bdr);background:white;border-radius:8px;cursor:pointer;font-size:12px">기본값 복원</button>
+            <button onclick="closeWatchEdit()" style="padding:10px 20px;background:var(--pri);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">완료</button>
           </div>
         </div>
       </div>
@@ -1201,13 +1292,117 @@ function renderDetail(){
 setTimeout(()=>{ initDetailSelect(); },100);
 
 // ===== 주 관리 종목 =====
-const W=D.watchlist||[];
+const W_ORIG=D.watchlist||[];
 const wCharts={};
+const WATCH_STORAGE_KEY='stockWatchlistCodes';
+
+function getWatchCodes(){
+  try {
+    const stored=localStorage.getItem(WATCH_STORAGE_KEY);
+    if(stored) return JSON.parse(stored);
+  } catch(e){}
+  return W_ORIG.map(w=>w.code);
+}
+function saveWatchCodes(codes){
+  try { localStorage.setItem(WATCH_STORAGE_KEY, JSON.stringify(codes)); } catch(e){}
+}
+function buildWatchList(){
+  const codes=getWatchCodes();
+  const wMap={}; W_ORIG.forEach(w=>wMap[w.code]=w);
+  const aMap={}; (D.allStocks||[]).forEach(a=>aMap[a.code]=a);
+  return codes.map(code=>{
+    if(wMap[code]) return wMap[code];
+    // fallback: allStocks 기반 최소 카드 데이터
+    const a=aMap[code];
+    if(!a) return null;
+    return {
+      code:a.code, name:a.name, sector:a.sector||'-', mcap:a.mcap,
+      current:a.price, change_pct:a.change, high52:null, low52:null, pos_52w:50,
+      per:a.per, pbr:a.pbr, roe:a.roe, div:a.div,
+      rsi:null, signal_label:'데이터 없음', signal_score:0,
+      buy_target:null, strong_buy:null, sell_target:null, strong_sell:null,
+      recommendation:'관망/보유', rec_color:'#616161', rec_reason:'상세 분석 데이터 없음',
+      dates:[], prices:[],
+      ret_1w:null, ret_1m:null, ret_3m:null, ret_6m:null,
+      simple: true
+    };
+  }).filter(Boolean);
+}
+let W=buildWatchList();
+
+function openWatchEdit(){
+  document.getElementById('watch-modal').style.display='flex';
+  renderWatchEditList();
+  document.getElementById('watch-search').value='';
+  document.getElementById('watch-search-results').innerHTML='<div style="text-align:center;color:var(--txt2);font-size:12px;padding:20px">종목명 또는 코드를 입력하여 검색</div>';
+}
+function closeWatchEdit(){
+  document.getElementById('watch-modal').style.display='none';
+  W=buildWatchList();
+  renderWatch();
+}
+function renderWatchEditList(){
+  const codes=getWatchCodes();
+  const wMap={}; W_ORIG.forEach(w=>wMap[w.code]=w);
+  const aMap={}; (D.allStocks||[]).forEach(a=>aMap[a.code]=a);
+  document.getElementById('watch-edit-list').innerHTML=codes.length===0?
+    '<div style="text-align:center;color:var(--txt2);font-size:12px;padding:20px">관리 종목이 없습니다. 아래에서 종목을 추가하세요.</div>':
+    codes.map((code,i)=>{
+      const s=wMap[code]||aMap[code]||{name:'알 수 없음',market:'-',current:0};
+      const hasDetail=!!wMap[code];
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:${hasDetail?'#fff5f5':'#fafafa'};border-radius:6px;margin-bottom:4px;border-left:3px solid ${hasDetail?'#c2185b':'#bdbdbd'}">
+        <div>
+          <div style="font-weight:700">${i+1}. ${s.name} ${hasDetail?'<span style="font-size:10px;color:#7b1fa2;background:#f3e5f5;padding:2px 6px;border-radius:4px;margin-left:4px">상세분석</span>':'<span style="font-size:10px;color:#616161;background:#eee;padding:2px 6px;border-radius:4px;margin-left:4px">기본정보</span>'}</div>
+          <div style="font-size:10px;color:var(--txt2)">${code} · ${s.market||'-'} · ${fmt(s.current||s.price||0)}원</div>
+        </div>
+        <button onclick="removeWatchCode('${code}')" style="background:#ffebee;color:#c62828;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;font-weight:700">✕</button>
+      </div>`;
+    }).join('');
+}
+function searchWatchStock(){
+  const q=document.getElementById('watch-search').value.toLowerCase().trim();
+  const container=document.getElementById('watch-search-results');
+  if(!q){ container.innerHTML='<div style="text-align:center;color:var(--txt2);font-size:12px;padding:20px">종목명 또는 코드를 입력하여 검색</div>'; return; }
+  const currentCodes=new Set(getWatchCodes());
+  const results=(D.allStocks||[]).filter(a=>
+    (a.name.toLowerCase().includes(q)||a.code.includes(q)) && !currentCodes.has(a.code)
+  ).slice(0,20);
+  if(results.length===0){ container.innerHTML='<div style="text-align:center;color:var(--txt2);font-size:12px;padding:20px">검색 결과 없음</div>'; return; }
+  container.innerHTML=results.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#fafafa;border-radius:6px;margin-bottom:4px;cursor:pointer" onclick="addWatchCode('${r.code}')">
+    <div>
+      <div style="font-weight:700">${r.name} <span style="color:var(--txt2);font-size:10px;font-weight:400">${r.code} · ${r.market}</span></div>
+      <div style="font-size:10px;color:var(--txt2);margin-top:2px">${r.sector||'-'} · ${fmt(r.price)}원 (${r.change>=0?'+':''}${r.change.toFixed(2)}%)</div>
+    </div>
+    <button style="background:#e8f5e9;color:#2e7d32;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700">＋ 추가</button>
+  </div>`).join('');
+}
+function addWatchCode(code){
+  const codes=getWatchCodes();
+  if(codes.includes(code)) return;
+  codes.push(code);
+  saveWatchCodes(codes);
+  renderWatchEditList();
+  searchWatchStock();
+}
+function removeWatchCode(code){
+  const codes=getWatchCodes().filter(c=>c!==code);
+  saveWatchCodes(codes);
+  renderWatchEditList();
+}
+function resetWatchlist(){
+  if(confirm('기본 관리 종목 6개(한화·삼성전자·삼성SDI·삼성증권·LG씨엔에스·LG전자)로 복원하시겠습니까?')){
+    saveWatchCodes(W_ORIG.map(w=>w.code));
+    renderWatchEditList();
+  }
+}
+
 function renderWatch(){
-  if(!W.length){ document.getElementById('watch-cards').innerHTML='<div class="card">데이터 준비 중...</div>'; return; }
+  W=buildWatchList();
+  if(!W.length){ document.getElementById('watch-cards').innerHTML='<div class="card" style="text-align:center;color:var(--txt2);padding:40px">관리 종목이 없습니다. 상단의 ✏️ 종목 편집 버튼으로 추가하세요.</div>'; document.getElementById('watch-count').textContent='(0개)'; document.getElementById('watch-avg').textContent='-'; document.getElementById('watch-summary').textContent='-'; document.getElementById('watch-names').textContent='-'; return; }
 
   // 헤더 요약
   document.getElementById('watch-count').textContent='('+W.length+'개)';
+  document.getElementById('watch-names').textContent=W.map(w=>w.name).join(' · ');
   const avgChg=W.reduce((s,w)=>s+(w.change_pct||0),0)/W.length;
   const upCount=W.filter(w=>(w.change_pct||0)>0).length;
   const el=document.getElementById('watch-avg');
@@ -1295,10 +1490,11 @@ function renderWatch(){
     </div>`;
   }).join('');
 
-  // 미니 차트 렌더
+  // 미니 차트 렌더 (히스토리 있는 종목만)
   W.forEach((w,i)=>{
     const c=document.getElementById('wc-'+i); if(!c) return;
     if(wCharts[i]) wCharts[i].destroy();
+    if(!w.dates||!w.dates.length){ c.style.display='none'; return; }
     wCharts[i]=new Chart(c,{
       type:'line',
       data:{labels:w.dates,datasets:[{data:w.prices,borderColor:w.rec_color,backgroundColor:w.rec_color+'22',borderWidth:2,pointRadius:0,fill:true,tension:.3}]},
@@ -1356,6 +1552,64 @@ function doSearch(){
       </tr>`;
     }).join('');
 }
+
+// ===== PWA: Service Worker 등록 + 설치 프롬프트 =====
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=>console.log('SW 등록 실패:',err));
+  });
+}
+
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  const dismissed=localStorage.getItem('installDismissedAt');
+  const now=Date.now();
+  // 7일 이내 거부한 경우 배너 숨김
+  if(dismissed && (now-parseInt(dismissed))<7*24*60*60*1000) return;
+  setTimeout(()=>{ document.getElementById('install-banner').classList.add('show'); },2500);
+});
+
+function installPWA(){
+  if(!deferredInstallPrompt){
+    // 이미 설치되었거나 iOS Safari 등
+    if(/iphone|ipad|ipod/i.test(navigator.userAgent)){
+      alert('iOS Safari: 하단 공유 버튼 → "홈 화면에 추가"를 눌러 설치하세요.');
+    } else {
+      alert('브라우저 메뉴 → "앱 설치" 또는 "홈 화면에 추가"를 선택하세요.');
+    }
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then((choice)=>{
+    if(choice.outcome==='accepted'){
+      document.getElementById('install-banner').classList.remove('show');
+    }
+    deferredInstallPrompt=null;
+  });
+}
+function dismissInstall(){
+  document.getElementById('install-banner').classList.remove('show');
+  localStorage.setItem('installDismissedAt', Date.now().toString());
+}
+
+// 이미 설치된 앱 감지
+window.addEventListener('appinstalled',()=>{
+  document.getElementById('install-banner').classList.remove('show');
+  localStorage.setItem('appInstalled','1');
+});
+
+// iOS Safari 감지 및 힌트 (beforeinstallprompt 미지원)
+setTimeout(()=>{
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone=window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const dismissed=localStorage.getItem('installDismissedAt');
+  const now=Date.now();
+  if(isIOS && !isStandalone && (!dismissed||(now-parseInt(dismissed))>7*24*60*60*1000)){
+    document.getElementById('install-banner').classList.add('show');
+  }
+},3000);
 </script>
 </body>
 </html>

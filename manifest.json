@@ -1,0 +1,47 @@
+{
+  "name": "주식 종목 추천 대시보드",
+  "short_name": "주식대시보드",
+  "description": "KRX+네이버금융 기반 한국 주식 분석 - 가치·성장·배당·매매 시그널 + 30일 예측",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f6f8",
+  "theme_color": "#1a237e",
+  "scope": "./",
+  "lang": "ko",
+  "categories": ["finance", "productivity", "business"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "주 관리 종목",
+      "short_name": "관리종목",
+      "description": "내 워치리스트 6종목",
+      "url": "./#watch"
+    },
+    {
+      "name": "오늘의 시장",
+      "short_name": "시장",
+      "description": "매수/매도 시점 예측",
+      "url": "./#market"
+    },
+    {
+      "name": "종목 상세·예측",
+      "short_name": "예측",
+      "description": "30일 주가 예측",
+      "url": "./#detail"
+    }
+  ]
+}
